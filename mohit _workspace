@@ -1,0 +1,16 @@
+topics which i cover 
+Role: AI Agents + Database
+AI Agents:
+• Research Agent — research and summarize relevant information
+• Coding Agent — generate or modify implementation code
+• Database Agent — design tables, relationships and SQL queries
+Database responsibilities:
+• users
+• workspaces
+• agents
+• tasks
+• agent_runs
+• messages
+• artifacts
+• reviews
+• logs
