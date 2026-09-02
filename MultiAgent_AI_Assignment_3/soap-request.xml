@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope
+    xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:sms="https://partner.example.com/sms">
+  <soap:Header>
+    <sms:Credentials>
+      <sms:clientId>CAMPUSEATS-DEMO-CLIENT</sms:clientId>
+      <sms:apiKey>REDACTED-DEMO-KEY</sms:apiKey>
+    </sms:Credentials>
+  </soap:Header>
+  <soap:Body>
+    <sms:SendSMSRequest>
+      <sms:messageId>RUN-2026-00041</sms:messageId>
+      <sms:to>+919876543210</sms:to>
+      <sms:message>Your AI task run RUN-2026-00041 has completed. Please open the workspace to view the final result.</sms:message>
+    </sms:SendSMSRequest>
+  </soap:Body>
+</soap:Envelope>
