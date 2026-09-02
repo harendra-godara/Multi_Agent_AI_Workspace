@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soap:Envelope
+    xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:sms="https://partner.example.com/sms">
+  <soap:Header/>
+  <soap:Body>
+    <sms:SendSMSResponse>
+      <sms:providerMessageId>MSG-884201</sms:providerMessageId>
+      <sms:status>ACCEPTED</sms:status>
+    </sms:SendSMSResponse>
+  </soap:Body>
+</soap:Envelope>

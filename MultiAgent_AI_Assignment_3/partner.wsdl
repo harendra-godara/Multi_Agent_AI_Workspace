@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions
+    name="EnterpriseSmsGateway"
+    targetNamespace="https://partner.example.com/sms"
+    xmlns:tns="https://partner.example.com/sms"
+    xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <wsdl:types>
+    <xsd:schema targetNamespace="https://partner.example.com/sms">
+      <xsd:element name="SendSMSRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="messageId" type="xsd:string"/>
+            <xsd:element name="to" type="xsd:string"/>
+            <xsd:element name="message" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="SendSMSResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="providerMessageId" type="xsd:string"/>
+            <xsd:element name="status" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="SendSMSInput">
+    <wsdl:part name="parameters" element="tns:SendSMSRequest"/>
+  </wsdl:message>
+
+  <wsdl:message name="SendSMSOutput">
+    <wsdl:part name="parameters" element="tns:SendSMSResponse"/>
+  </wsdl:message>
+
+  <wsdl:portType name="SmsGatewayPortType">
+    <wsdl:operation name="sendSMS">
+      <wsdl:input message="tns:SendSMSInput"/>
+      <wsdl:output message="tns:SendSMSOutput"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="SmsGatewaySoapBinding" type="tns:SmsGatewayPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="sendSMS">
+      <soap:operation soapAction="https://partner.example.com/sms/sendSMS"/>
+      <wsdl:input><soap:body use="literal"/></wsdl:input>
+      <wsdl:output><soap:body use="literal"/></wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="EnterpriseSmsGateway">
+    <wsdl:port name="SmsGatewayPort" binding="tns:SmsGatewaySoapBinding">
+      <soap:address location="https://sms.partner.example.com/soap/SmsGateway"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>
