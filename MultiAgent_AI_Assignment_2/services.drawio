@@ -1,0 +1,36 @@
+<mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="950" math="0" shadow="0">
+<root>
+<mxCell id="0"/><mxCell id="1" parent="0"/>
+
+<mxCell id="title" value="Multi-Agent AI Orchestration Platform — Service Design" style="text;fontStyle=1;fontSize=22;html=1;" vertex="1" parent="1">
+<mxGeometry x="50" y="25" width="800" height="40" as="geometry"/></mxCell>
+
+<mxCell id="front" value="Frontend / UI (Client Layer)&lt;br&gt;&lt;br&gt;&lt;b&gt;Owner:&lt;/b&gt; Harshita Rathore&lt;br&gt;&lt;b&gt;Branch:&lt;/b&gt; feature/frontend&lt;br&gt;&lt;br&gt;Login • Workspaces • Task UI • Status • Results&lt;br&gt;&lt;i&gt;No persistent business data owned&lt;/i&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+<mxGeometry x="530" y="105" width="540" height="125" as="geometry"/></mxCell>
+
+<mxCell id="s1" value="Identity &amp; Access Service&lt;br&gt;&lt;br&gt;&lt;b&gt;Member:&lt;/b&gt; Harendra Godara&lt;br&gt;&lt;b&gt;Branch:&lt;/b&gt; feature/backend&lt;br&gt;&lt;br&gt;&lt;b&gt;Owns:&lt;/b&gt;&lt;br&gt;• Users • Auth Sessions • Roles • Access Records" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+<mxGeometry x="50" y="300" width="330" height="230" as="geometry"/></mxCell>
+
+<mxCell id="s2" value="Workspace &amp; Task Service&lt;br&gt;&lt;br&gt;&lt;b&gt;Member:&lt;/b&gt; Harendra Godara&lt;br&gt;&lt;b&gt;Branch:&lt;/b&gt; feature/backend&lt;br&gt;&lt;br&gt;&lt;b&gt;Owns:&lt;/b&gt;&lt;br&gt;• Workspaces • Members • Tasks&lt;br&gt;• Dependencies • Workflow Runs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+<mxGeometry x="440" y="300" width="330" height="230" as="geometry"/></mxCell>
+
+<mxCell id="s3" value="AI Agent Service&lt;br&gt;&lt;br&gt;&lt;b&gt;Member:&lt;/b&gt; Mohit Tailor&lt;br&gt;&lt;b&gt;Branch:&lt;/b&gt; feature/agents-db&lt;br&gt;&lt;br&gt;&lt;b&gt;Owns:&lt;/b&gt;&lt;br&gt;• Agents • Agent Runs • Messages&lt;br&gt;• Shared Context • Agent Outputs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+<mxGeometry x="830" y="300" width="330" height="230" as="geometry"/></mxCell>
+
+<mxCell id="s4" value="Execution &amp; Artifact Service&lt;br&gt;&lt;br&gt;&lt;b&gt;Member:&lt;/b&gt; Anurag Sharma (Leader)&lt;br&gt;&lt;b&gt;Branch:&lt;/b&gt; feature/testing-infra&lt;br&gt;&lt;br&gt;&lt;b&gt;Owns:&lt;/b&gt;&lt;br&gt;• Artifacts • Reviews • Execution Logs&lt;br&gt;• Run History • Test/Infra Records" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;" vertex="1" parent="1">
+<mxGeometry x="1220" y="300" width="330" height="230" as="geometry"/></mxCell>
+
+<mxCell id="e0" value="loginUser" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="front" target="s1"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e1" value="checkAccess" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="s2" target="s1"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e2" value="executeTask" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="s2" target="s3"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e3" value="saveOutput" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="s3" target="s4"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e4" value="requestReview" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="s4" target="s3"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="e5" value="runTask / status" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeWidth=2;" edge="1" parent="1" source="front" target="s2"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+<mxCell id="note" value="&lt;b&gt;Central operation: runTask&lt;/b&gt;&lt;br&gt;Validate access → validate task → plan/decompose → select agents → execute → share context → review → store artifacts/logs → deliver final output" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f7f7f7;strokeColor=#777777;fontSize=13;" vertex="1" parent="1">
+<mxGeometry x="180" y="620" width="1230" height="100" as="geometry"/></mxCell>
+
+<mxCell id="branches" value="&lt;b&gt;Git ownership&lt;/b&gt;&lt;br&gt;main&lt;br&gt;├── feature/frontend → Harshita Rathore&lt;br&gt;├── feature/backend → Harendra Godara&lt;br&gt;├── feature/agents-db → Mohit Tailor&lt;br&gt;└── feature/testing-infra → Anurag Sharma (Leader)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f7f7f7;strokeColor=#777777;fontSize=13;" vertex="1" parent="1">
+<mxGeometry x="180" y="760" width="1230" height="135" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
