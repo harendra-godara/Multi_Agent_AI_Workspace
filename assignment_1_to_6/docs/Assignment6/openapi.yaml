@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info: {title: Multi-Agent AI Workspace — Honest Responses, version: 1.1.0}
+components:
+  schemas:
+    Problem:
+      type: object
+      required: [type,title,status,detail]
+      properties:
+        type: {type: string}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+        errors:
+          type: array
+          items:
+            type: object
+            required: [field,message]
+            properties: {field: {type: string}, message: {type: string}}
+paths:
+  /tasks:
+    get: {responses: {'200': {description: Task list}, '401': {description: Unauthenticated}}}
+    post: {responses: {'201': {description: Created}, '400': {description: Malformed}, '401': {description: Unauthenticated}, '403': {description: Forbidden}, '422': {description: Validation}, '429': {description: Rate limited}, '503': {description: Dependency failure}}}
+  /tasks/{id}:
+    get: {responses: {'200': {description: Task}, '304': {description: Not modified}, '401': {description: Unauthenticated}, '404': {description: Not found}}}
+    patch: {responses: {'200': {description: Updated}, '400': {description: Malformed}, '401': {description: Unauthenticated}, '403': {description: Forbidden}, '404': {description: Not found}, '409': {description: Conflict}, '412': {description: Precondition failed}, '422': {description: Validation}}}
+    delete: {responses: {'204': {description: Deleted}, '401': {description: Unauthenticated}, '403': {description: Forbidden}, '404': {description: Not found}, '409': {description: Conflict}}}
+  /tasks/{id}/run:
+    post: {responses: {'202': {description: Accepted}, '400': {description: Malformed}, '401': {description: Unauthenticated}, '403': {description: Forbidden}, '404': {description: Not found}, '409': {description: Illegal transition}, '422': {description: Validation}, '429': {description: Rate limited}, '503': {description: Dependency unavailable}}}
