@@ -1,0 +1,1 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><validateArtifactResponse xmlns="http://multiagent.example/cs543"><verdict>PASS</verdict><score>0.96</score><comments>Artifact passed partner validation.</comments></validateArtifactResponse></soap:Body></soap:Envelope>

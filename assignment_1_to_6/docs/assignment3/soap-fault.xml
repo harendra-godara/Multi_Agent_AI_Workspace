@@ -1,0 +1,1 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><soap:Fault><faultcode>soap:Server</faultcode><faultstring>Validation partner unavailable</faultstring><detail><code>PARTNER_UNAVAILABLE</code><message>Temporary validation dependency failure.</message></detail></soap:Fault></soap:Body></soap:Envelope>

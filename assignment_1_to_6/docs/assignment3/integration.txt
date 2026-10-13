@@ -1,0 +1,9 @@
+# Assignment 3 — SOAP Integration
+Multi-Agent AI Workspace uses an external SOAP validation partner for artifact validation.
+
+Operation: validateArtifact
+Input: workflowRunId, artifactRef
+Output: verdict, score, comments
+Fault: ValidationFault / partner unavailable
+
+The AI Agent or Execution & Artifact service is the caller. The WSDL is the published contract. Internal data stores and provider credentials remain hidden. SOAP faults are mapped to clean application errors; partner outages are transient and may be retried with timeout/backoff.
