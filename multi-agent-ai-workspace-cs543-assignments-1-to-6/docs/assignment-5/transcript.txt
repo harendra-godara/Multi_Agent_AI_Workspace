@@ -1,0 +1,7 @@
+# Assignment 5 representative curl transcript
+GET /tasks -> 401 application/problem+json
+OPTIONS /tasks -> 204, Allow: GET, POST, OPTIONS
+POST /tasks/{id}/run with Idempotency-Key -> 202 Accepted, Location: /tasks/{id}/status
+GET /tasks/{id} + If-None-Match -> 304 Not Modified
+PATCH /tasks/{id} + stale If-Match -> 412 Precondition Failed
+429/503 responses include Retry-After.

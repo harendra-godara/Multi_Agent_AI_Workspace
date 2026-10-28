@@ -1,0 +1,1 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><validateArtifact xmlns="http://multiagent.example/cs543"><workflowRunId>run-123</workflowRunId><artifactRef>artifact-456</artifactRef></validateArtifact></soap:Body></soap:Envelope>

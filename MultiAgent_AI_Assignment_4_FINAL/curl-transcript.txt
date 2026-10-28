@@ -1,0 +1,12 @@
+# Representative curl transcript required by the assignment
+
+POST /tasks -> 201 CREATED
+Location: /tasks/<created-id>
+
+Repeat same POST with same Idempotency-Key -> 201 CREATED
+Same task id and Location; no duplicate task created.
+
+Malformed body -> 400 BAD REQUEST
+Unknown task id -> 404 NOT FOUND
+First POST /tasks/<id>/cancellation -> 202 ACCEPTED
+Second cancellation -> 409 CONFLICT

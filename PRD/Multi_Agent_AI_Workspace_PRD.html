@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Multi-Agent AI Workspace — Project Requirement Document</title>
+<style>
+  :root {
+    --ink: #1c1c1e;
+    --muted: #5a5a60;
+    --accent: #4f46e5;
+    --accent-soft: #eef0fd;
+    --line: #e2e2e8;
+    --bg-card: #fafafc;
+    --code-bg: #1e1e2e;
+    --code-fg: #d4d4e0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    line-height: 1.65;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+    background: #ffffff;
+  }
+  h1 { font-size: 2rem; margin-bottom: 4px; letter-spacing: -0.02em; }
+  .subtitle { color: var(--muted); font-size: 1.05rem; margin-bottom: 8px; }
+  .meta {
+    display: flex; gap: 24px; flex-wrap: wrap;
+    font-size: 0.85rem; color: var(--muted);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 24px; margin-bottom: 36px;
+  }
+  h2 {
+    font-size: 1.35rem; margin-top: 52px; margin-bottom: 14px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--accent); color: var(--ink);
+  }
+  h3 { font-size: 1.08rem; margin-top: 30px; margin-bottom: 8px; color: var(--accent); }
+  h4 { font-size: 0.96rem; margin-top: 20px; margin-bottom: 6px; color: var(--ink); }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 22px; }
+  li { margin: 5px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 22px; font-size: 0.88rem; }
+  th, td { text-align: left; padding: 8px 10px; border: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--accent-soft); font-weight: 600; }
+  tr:nth-child(even) td { background: #fcfcfd; }
+  code {
+    background: var(--accent-soft); padding: 1px 6px; border-radius: 4px;
+    font-size: 0.88em; font-family: "SFMono-Regular", Consolas, monospace;
+  }
+  pre {
+    background: var(--code-bg); color: var(--code-fg);
+    padding: 14px 16px; border-radius: 8px; overflow-x: auto;
+    font-size: 0.82rem; line-height: 1.5; margin: 10px 0 18px;
+  }
+  pre code { background: none; padding: 0; color: inherit; }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--line);
+    border-radius: 10px; padding: 16px 20px; margin: 14px 0;
+  }
+  .tag {
+    display: inline-block; font-size: 0.72rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 2px 9px; border-radius: 999px; margin-left: 8px;
+  }
+  .tag.owner-you { background: #dcfce7; color: #166534; }
+  .tag.owner-team { background: #fef3c7; color: #92400e; }
+  .tag.status-done { background: #dbeafe; color: #1e40af; }
+  .tag.status-next { background: #fde68a; color: #78350f; }
+  .tag.status-planned { background: #ede9fe; color: #5b21b6; }
+  .note { font-size: 0.85rem; color: var(--muted); font-style: italic; }
+  .acceptance {
+    background: #f6f7fb; border-left: 3px solid var(--accent);
+    padding: 8px 14px; margin: 6px 0 14px; font-size: 0.88rem;
+  }
+  .acceptance strong { color: var(--accent); }
+  .toc { background: var(--accent-soft); border-radius: 10px; padding: 16px 24px; margin-bottom: 24px; }
+  .toc a { color: var(--accent); text-decoration: none; font-size: 0.92rem; }
+  .toc ol { columns: 2; }
+  .field-table td:first-child { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.85em; white-space: nowrap; }
+  @media print {
+    body { padding: 0 12mm; }
+    h2 { break-after: avoid; }
+    pre { white-space: pre-wrap; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Multi-Agent AI Workspace</h1>
+<p class="subtitle">Project Requirement Document (PRD) — Detailed Edition</p>
+<div class="meta">
+  <span><strong>Type:</strong> University Group Project</span>
+  <span><strong>Version:</strong> 2.0 (expanded)</span>
+  <span><strong>Date:</strong> September 13, 2026</span>
+  <span><strong>Prepared by:</strong> Harendra (Backend — Identity & Access, Workspace & Task Services)</span>
+</div>
+
+<div class="toc">
+  <strong>Contents</strong>
+  <ol>
+    <li><a href="#overview">1. Project Overview</a></li>
+    <li><a href="#goals">2. Goals & Objectives</a></li>
+    <li><a href="#scope">3. Scope</a></li>
+    <li><a href="#team">4. Team & Ownership</a></li>
+    <li><a href="#architecture">5. System Architecture</a></li>
+    <li><a href="#functional">6. Functional Requirements</a></li>
+    <li><a href="#nonfunctional">7. Non-Functional Requirements</a></li>
+    <li><a href="#data-model">8. Data Model (Full Schema)</a></li>
+    <li><a href="#api">9. API Surface & Contracts</a></li>
+    <li><a href="#errors">10. Error Handling & Status Codes</a></li>
+    <li><a href="#stack">11. Technology Stack</a></li>
+    <li><a href="#testing">12. Testing Strategy</a></li>
+    <li><a href="#deployment">13. Deployment & Environment</a></li>
+    <li><a href="#status">14. Current Status</a></li>
+    <li><a href="#milestones">15. Milestones & Timeline</a></li>
+    <li><a href="#risks">16. Assumptions, Constraints & Risks</a></li>
+    <li><a href="#success">17. Success Criteria</a></li>
+    <li><a href="#glossary">18. Glossary</a></li>
+  </ol>
+</div>
+
+<h2 id="overview">1. Project Overview</h2>
+<p>
+The <strong>Multi-Agent AI Workspace</strong> is a collaborative platform where users create workspaces, define tasks,
+and delegate work to AI agents that execute those tasks and produce artifacts (files, outputs, reports). A user signs
+up, creates a workspace, invites collaborators, creates tasks, and assigns some of those tasks to an AI agent instead
+of a human. The AI Agent Service reasons about the task, decides what actions are needed, and calls the Execution &
+Artifact Service to actually run those actions in a sandbox. The result — logs, files, structured output — is stored
+as an artifact and linked back to the task, so the human who created it can review the outcome from the frontend.
+</p>
+<p>
+The system was originally specified as four independent microservices (Identity & Access, Workspace & Task, AI Agent,
+Execution & Artifact) plus a frontend, each with its own process, deployment, and possibly its own datastore. Because
+one contributor (Harendra) is solely responsible for two of those four backend services, those two have been
+consolidated into a single modular Express application. The reasoning for this is explained in detail in
+<a href="#architecture">Section 5</a> — in short, the *logical* separation (auth vs. workspace/task logic) is preserved
+in code and schema, but the *physical* separation (two servers, two deployments, network calls between them) is
+dropped because it adds operational cost without adding value for a single developer.
+</p>
+
+<h2 id="goals">2. Goals & Objectives</h2>
+<ul>
+  <li>Deliver a working end-to-end platform: user signs up → creates a workspace → assigns tasks to AI agents → agents execute and produce artifacts → results are visible in the workspace.</li>
+  <li>Demonstrate solid backend fundamentals: authentication, authorization, relational data modeling, and secure API design — the kind of thing that would hold up in a real production system, not just a demo.</li>
+  <li>For Harendra specifically: use this project as a learning vehicle. Every architectural and technical decision is documented with reasoning in <code>docs/PROGRESS.md</code>, not just implemented and forgotten.</li>
+  <li>Keep the system modular enough that the Identity & Access and Workspace & Task services could be physically split into two real microservices later, with minimal rework, if the project ever needs to scale that way.</li>
+  <li>Ensure the four backend services + frontend can be integrated by four different people without constant back-and-forth, by defining clear API contracts up front (see <a href="#api">Section 9</a>).</li>
+</ul>
+
+<h2 id="scope">3. Scope</h2>
+<h3>3.1 In Scope</h3>
+<ul>
+  <li>User identity, registration, authentication, and session management</li>
+  <li>Workspace creation, membership management, and role-based access within a workspace</li>
+  <li>Task creation, assignment (to a human or an AI agent), dependency chains, and status tracking</li>
+  <li>Workflow runs — linking a task to one execution attempt by an AI agent, with status and result tracking</li>
+  <li>AI agent orchestration: interpreting a task, planning steps, invoking tools/actions</li>
+  <li>Execution sandboxing and artifact storage/retrieval</li>
+  <li>Frontend UI for auth, workspace management, task boards, and artifact viewing</li>
+</ul>
+<h3>3.2 Out of Scope (v1)</h3>
+<ul>
+  <li>Billing / payments / subscription tiers</li>
+  <li>Multi-tenant organization hierarchy above the workspace level (e.g. "companies" containing multiple workspaces)</li>
+  <li>Real-time collaborative editing (e.g. simultaneous cursors, live presence indicators)</li>
+  <li>Mobile native apps (web-responsive frontend only)</li>
+  <li>Third-party OAuth login (Google/GitHub sign-in) — email/password only for v1</li>
+  <li>Rate limiting / abuse prevention at the infrastructure level (acceptable to note as a known gap for a student project)</li>
+</ul>
+
+<h2 id="team">4. Team & Ownership</h2>
+<table>
+  <tr><th>Service</th><th>Owner</th><th>Notes</th></tr>
+  <tr><td>Identity & Access Service</td><td>Harendra <span class="tag owner-you">You</span></td><td>Implemented as part of the consolidated Express app</td></tr>
+  <tr><td>Workspace & Task Service</td><td>Harendra <span class="tag owner-you">You</span></td><td>Implemented as part of the consolidated Express app</td></tr>
+  <tr><td>AI Agent Service</td><td>Teammate <span class="tag owner-team">Team</span></td><td>Handles agent reasoning / orchestration</td></tr>
+  <tr><td>Execution & Artifact Service</td><td>Teammate <span class="tag owner-team">Team</span></td><td>Handles sandboxed execution and artifact storage</td></tr>
+  <tr><td>Frontend</td><td>Teammate <span class="tag owner-team">Team</span></td><td>Consumes the above services via API</td></tr>
+</table>
+<p class="note">Recommendation: even though only two services are "yours," publish the API contracts in Section 9 to the whole team early — the AI Agent Service needs to know the shape of a task, and the frontend needs to know the shape of every response, before they can build against it.</p>
+
+<h2 id="architecture">5. System Architecture</h2>
+<div class="card">
+  <p><strong>Original spec:</strong> Four independent microservices (Identity & Access, Workspace & Task, AI Agent, Execution & Artifact), each its own deployable unit, communicating over HTTP (and possibly a message queue for async agent work), with a separate frontend calling into all of them.</p>
+  <p><strong>Adapted approach:</strong> Identity & Access and Workspace & Task — both owned by Harendra — are combined into a <strong>single modular Express application</strong>. The AI Agent Service and Execution & Artifact Service remain separate, owned by teammates.</p>
+  <p><strong>Why consolidate two of them:</strong></p>
+  <ul>
+    <li><strong>No isolation benefit for a single owner.</strong> Microservices earn their complexity when different teams need to deploy independently, scale independently, or use different tech stacks. Here, one person writes and deploys both services — the "independence" of separate processes buys nothing.</li>
+    <li><strong>Lower operational overhead.</strong> Two services would mean two <code>package.json</code>s, two servers to run locally, two sets of environment variables, and a network call (with its own failure modes — timeouts, retries, serialization) for what is really just a function call between two parts of the same mental model.</li>
+    <li><strong>Logical separation is kept, not lost.</strong> Inside the one Express app, auth-related code (routes, controllers, middleware) never imports workspace/task internals directly and vice versa — they only interact through well-defined function boundaries, and the database schema keeps the tables cleanly grouped. This means a future "split into two real services" migration is a refactor, not a rewrite.</li>
+    <li><strong>Consistent with how the rest of the team is structured.</strong> The AI Agent Service and Execution & Artifact Service are owned by different people and genuinely benefit from being separate — that's exactly the case microservices are for.</li>
+  </ul>
+  <p><strong>Cross-service communication:</strong> the AI Agent Service calls the Workspace & Task Service's API (JWT-authenticated, using a service-level token or the delegating user's token) to fetch task details and report status/results back. The Execution & Artifact Service is called by the AI Agent Service, not directly by Workspace & Task.</p>
+</div>
+
+<h4>5.1 High-Level Data Flow</h4>
+<ol>
+  <li>User registers/logs in → Identity & Access issues a JWT.</li>
+  <li>User creates a workspace and invites members → Workspace & Task Service.</li>
+  <li>User creates a task and assigns it to an AI agent → Workspace & Task Service creates a <code>task</code> row and, on assignment, a <code>workflow_runs</code> row with status <code>pending</code>.</li>
+  <li>AI Agent Service polls or is notified of the new run → fetches task details via API.</li>
+  <li>AI Agent Service plans steps → calls Execution & Artifact Service to run them.</li>
+  <li>Execution & Artifact Service runs the action in a sandbox → stores the resulting artifact → returns a reference.</li>
+  <li>AI Agent Service reports back to Workspace & Task Service → <code>workflow_runs</code> status updated to <code>completed</code>/<code>failed</code>, artifact reference stored.</li>
+  <li>Frontend polls/reads the task and run status → shows the artifact to the user.</li>
+</ol>
+
+<h2 id="functional">6. Functional Requirements</h2>
+
+<h3>6.1 Identity & Access Service <span class="tag owner-you">You</span></h3>
+
+<h4>FR-1: User Registration</h4>
+<ul>
+  <li><code>POST /api/auth/register</code> accepts email, password, and (optionally) a display name.</li>
+  <li>Password is hashed with <code>bcrypt</code> before storage — plaintext password is never written to the database or logs.</li>
+  <li>Email uniqueness is enforced at the database level (unique constraint) and checked at the application level for a clean error message.</li>
+</ul>
+<div class="acceptance">
+  <strong>Acceptance criteria:</strong>
+  <ul>
+    <li>Valid registration returns <code>201 Created</code> with a JWT and the created user's non-sensitive fields (id, email, created_at) — never the password hash.</li>
+    <li>Registering with an already-used email returns <code>409 Conflict</code> with a clear error message, not a raw database error.</li>
+    <li>Missing or malformed email/password returns <code>400 Bad Request</code>.</li>
+  </ul>
+</div>
+
+<h4>FR-2: User Login</h4>
+<ul>
+  <li><code>POST /api/auth/login</code> accepts email + password.</li>
+  <li>Looks up the user by email, compares password against stored hash using <code>bcrypt.compare</code>.</li>
+  <li>On success, issues a new signed JWT and records a session in <code>auth_sessions</code>.</li>
+</ul>
+<div class="acceptance">
+  <strong>Acceptance criteria:</strong>
+  <ul>
+    <li>Correct credentials return <code>200 OK</code> with a JWT.</li>
+    <li>Incorrect password or non-existent email both return the <em>same</em> generic <code>401 Unauthorized</code> message (never reveal whether the email exists — this is a deliberate security choice, not an oversight).</li>
+    <li>A new row is created in <code>auth_sessions</code> on every successful login.</li>
+  </ul>
+</div>
+
+<h4>FR-3: Token Verification Middleware</h4>
+<ul>
+  <li>A reusable <code>verifyToken</code> Express middleware reads the <code>Authorization: Bearer &lt;token&gt;</code> header, verifies the JWT signature and expiry, and attaches the decoded user info (e.g. <code>req.user.id</code>) to the request.</li>
+  <li>Applied to every route that requires authentication (all workspace/task routes).</li>
+</ul>
+<div class="acceptance">
+  <strong>Acceptance criteria:</strong>
+  <ul>
+    <li>Missing token → <code>401 Unauthorized</code>.</li>
+    <li>Invalid/tampered signature → <code>401 Unauthorized</code>.</li>
+    <li>Expired token → <code>401 Unauthorized</code> with an error code the frontend can use to trigger a re-login.</li>
+    <li>Valid token → request proceeds, <code>req.user</code> populated.</li>
+  </ul>
+</div>
+
+<h4>FR-4: Session Management</h4>
+<ul>
+  <li><code>auth_sessions</code> tracks issued sessions (and can later support logout/revocation and viewing active devices).</li>
+  <li><span class="note">Planned:</span> <code>POST /api/auth/logout</code> to revoke a session; password reset flow.</li>
+</ul>
+
+<h3>6.2 Workspace & Task Service <span class="tag owner-you">You</span></h3>
+
+<h4>FR-5: Workspace CRUD</h4>
+<ul>
+  <li>Authenticated users can create a workspace (they become its first member, with an owner-level role).</li>
+  <li>Users can list workspaces they belong to, view a single workspace's details, update its name/description (owner/admin only), and delete it (owner only, soft delete recommended).</li>
+</ul>
+<div class="acceptance">
+  <strong>Acceptance criteria:</strong>
+  <ul>
+    <li>Creating a workspace also creates the corresponding <code>workspace_members</code> row for the creator with role <code>owner</code>.</li>
+    <li>A user who is not a member of a workspace gets <code>403 Forbidden</code> when trying to read/write it, not <code>404</code> (avoids leaking existence — or <code>404</code> is also acceptable if the team prefers not to reveal existence at all; pick one convention and document it).</li>
+  </ul>
+</div>
+
+<h4>FR-6: Workspace Membership</h4>
+<ul>
+  <li>Owners/admins can invite a user (by email) to a workspace, remove a member, or change a member's role.</li>
+  <li>Roles: <code>owner</code>, <code>admin</code>, <code>member</code> (exact set to be finalized, but at minimum owner vs. member).</li>
+</ul>
+
+<h4>FR-7: Task Management</h4>
+<ul>
+  <li>Any workspace member can create a task within that workspace: title, description, assignee (a user or an AI agent identifier), due date (optional), priority (optional).</li>
+  <li>Tasks can be listed, filtered by status/assignee, updated, and deleted within a workspace.</li>
+  <li>Task status lifecycle: <code>pending → in_progress → completed</code>, with a <code>failed</code> branch when assigned to an AI agent and execution fails.</li>
+</ul>
+
+<h4>FR-8: Task Dependencies</h4>
+<ul>
+  <li>A task can declare one or more other tasks as prerequisites via <code>task_dependencies</code>.</li>
+  <li>A task assigned to an AI agent should not be picked up for execution until all its dependencies are <code>completed</code>.</li>
+</ul>
+<div class="acceptance">
+  <strong>Acceptance criteria:</strong>
+  <ul>
+    <li>Attempting to create a circular dependency (A depends on B, B depends on A) is rejected with <code>400 Bad Request</code>.</li>
+  </ul>
+</div>
+
+<h4>FR-9: Workflow Runs</h4>
+<ul>
+  <li>When a task is assigned to an AI agent, a <code>workflow_runs</code> row is created representing one execution attempt.</li>
+  <li>The AI Agent Service updates a run's status (<code>pending → running → completed/failed</code>) and result via an authenticated API call.</li>
+  <li>A task can have multiple workflow runs over time (e.g. a retry after failure).</li>
+</ul>
+
+<h3>6.3 AI Agent Service <span class="tag owner-team">Team</span></h3>
+<ul>
+  <li>Receive a task definition (fetched from the Workspace & Task Service) for a given <code>workflow_run</code>.</li>
+  <li>Interpret the task and plan a sequence of actions/tool calls needed to complete it.</li>
+  <li>Invoke the Execution & Artifact Service to carry out each planned action.</li>
+  <li>Report progress and final status (and any resulting artifact reference) back to the Workspace & Task Service.</li>
+  <li><span class="note">Detailed requirements to be authored by the owning teammate; this PRD defines the integration contract only (Section 9).</span></li>
+</ul>
+
+<h3>6.4 Execution & Artifact Service <span class="tag owner-team">Team</span></h3>
+<ul>
+  <li>Execute agent-requested actions in an isolated/sandboxed environment (no access to other users' data).</li>
+  <li>Store resulting artifacts (files, structured output, logs) with metadata: owning task/run, creation time, content type.</li>
+  <li>Expose artifacts for retrieval by the frontend or other services, with the same authentication model as the rest of the system.</li>
+  <li><span class="note">Detailed requirements to be authored by the owning teammate.</span></li>
+</ul>
+
+<h3>6.5 Frontend <span class="tag owner-team">Team</span></h3>
+<ul>
+  <li>Auth screens (register/login), storing the JWT and attaching it to subsequent API calls.</li>
+  <li>Workspace dashboard: list/create workspaces, manage members.</li>
+  <li>Task board: create tasks, view status, view dependency chains, assign to a human or an AI agent.</li>
+  <li>Artifact viewer for completed workflow runs.</li>
+  <li><span class="note">Detailed requirements to be authored by the owning teammate.</span></li>
+</ul>
+
+<h2 id="nonfunctional">7. Non-Functional Requirements</h2>
+<table>
+  <tr><th>Category</th><th>Requirement</th></tr>
+  <tr><td>Security</td><td>All SQL via parameterized queries (no string concatenation); passwords hashed with bcrypt and never returned in any API response; JWTs signed with a secret from environment config, never hardcoded; DB accessed via a least-privilege user (<code>app_user</code>), not a superuser.</td></tr>
+  <tr><td>Maintainability</td><td>MVC separation (<code>routes</code> → <code>controllers</code> → <code>db</code>) so auth logic and workspace/task logic stay decoupled inside one app; consistent naming and error-response shape across all endpoints.</td></tr>
+  <tr><td>Documentation</td><td>Every architectural and technical decision recorded in <code>docs/PROGRESS.md</code> as it is made, including the reasoning, not just the outcome.</td></tr>
+  <tr><td>Reliability</td><td>PostgreSQL connection pooling to handle concurrent requests without exhausting connections; graceful error responses instead of unhandled exceptions/crashes.</td></tr>
+  <tr><td>Portability</td><td>Environment-based configuration via <code>dotenv</code> (DB credentials, JWT secret, port) so the app behaves identically across dev machines and, eventually, a deployment environment.</td></tr>
+  <tr><td>Performance (indicative, non-binding for a student project)</td><td>Typical API responses under ~200ms on local hardware for simple CRUD; no N+1 query patterns for listing tasks/members.</td></tr>
+  <tr><td>Auditability</td><td><code>auth_sessions</code> and <code>workflow_runs</code> provide a basic audit trail of who logged in when, and what an agent did and when.</td></tr>
+</table>
+
+<h2 id="data-model">8. Data Model (Full Schema)</h2>
+<p>Seven tables, all using UUID primary keys (via <code>gen_random_uuid()</code> or equivalent), spanning the two services owned by Harendra.</p>
+
+<h3>8.1 <code>users</code></h3>
+<table class="field-table">
+  <tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+  <tr><td>id</td><td>UUID, PK</td><td>Primary key</td></tr>
+  <tr><td>email</td><td>TEXT, UNIQUE, NOT NULL</td><td>Used for login; unique constraint enforced at DB level</td></tr>
+  <tr><td>password_hash</td><td>TEXT, NOT NULL</td><td>bcrypt hash — never selected in API-facing queries</td></tr>
+  <tr><td>display_name</td><td>TEXT</td><td>Optional, shown in the UI</td></tr>
+  <tr><td>created_at</td><td>TIMESTAMPTZ, DEFAULT now()</td><td></td></tr>
+</table>
+
+<h3>8.2 <code>auth_sessions</code></h3>
+<table class="field-table">
+  <tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+  <tr><td>id</td><td>UUID, PK</td><td></td></tr>
+  <tr><td>user_id</td><td>UUID, FK → users.id</td><td>ON DELETE CASCADE</td></tr>
+  <tr><td>issued_at</td><td>TIMESTAMPTZ, DEFAULT now()</td><td></td></tr>
+  <tr><td>expires_at</td><td>TIMESTAMPTZ</td><td>Mirrors JWT expiry for revocation/audit purposes</td></tr>
+  <tr><td>revoked</td><td>BOOLEAN, DEFAULT false</td><td>Set true on logout <span class="note">(planned)</span></td></tr>
+</table>
+
+<h3>8.3 <code>workspaces</code></h3>
+<table class="field-table">
+  <tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+  <tr><td>id</td><td>UUID, PK</td><td></td></tr>
+  <tr><td>name</td><td>TEXT, NOT NULL</td><td></td></tr>
+  <tr><td>description</td><td>TEXT</td><td>Optional</td></tr>
+  <tr><td>created_by</td><td>UUID, FK → users.id</td><td></td></tr>
+  <tr><td>created_at</td><td>TIMESTAMPTZ, DEFAULT now()</td><td></td></tr>
+</table>
+
+<h3>8.4 <code>workspace_members</code></h3>
+<table class="field-table">
+  <tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+  <tr><td>id</td><td>UUID, PK</td><td></td></tr>
+  <tr><td>workspace_id</td><td>UUID, FK → workspaces.id</td><td>ON DELETE CASCADE</td></tr>
+  <tr><td>user_id</td><td>UUID, FK → users.id</td><td>ON DELETE CASCADE</td></tr>
+  <tr><td>role</td><td>TEXT (enum: owner/admin/member)</td><td></td></tr>
+  <tr><td>joined_at</td><td>TIMESTAMPTZ, DEFAULT now()</td><td></td></tr>
+</table>
+<p class="note">Unique constraint on (workspace_id, user_id) — a user can't join the same workspace twice.</p>
+
+<h3>8.5 <code>tasks</code></h3>
+<table class="field-table">
+  <tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+  <tr><td>id</td><td>UUID, PK</td><td></td></tr>
+  <tr><td>workspace_id</td><td>UUID, FK → workspaces.id</td><td>ON DELETE CASCADE</td></tr>
+  <tr><td>title</td><td>TEXT, NOT NULL</td><td></td></tr>
+  <tr><td>description</td><td>TEXT</td><td>Optional</td></tr>
+  <tr><td>assignee_type</td><td>TEXT (enum: user/agent)</td><td>Determines how <code>assignee_id</code> is interpreted</td></tr>
+  <tr><td>assignee_id</td><td>UUID</td><td>References users.id or an agent identifier, depending on assignee_type</td></tr>
+  <tr><td>status</td><td>TEXT (enum: pending/in_progress/completed/failed)</td><td></td></tr>
+  <tr><td>priority</td><td>TEXT or SMALLINT</td><td>Optional</td></tr>
+  <tr><td>due_date</td><td>TIMESTAMPTZ</td><td>Optional</td></tr>
+  <tr><td>created_by</td><td>UUID, FK → users.id</td><td></td></tr>
+  <tr><td>created_at</td><td>TIMESTAMPTZ, DEFAULT now()</td><td></td></tr>
+  <tr><td>updated_at</td><td>TIMESTAMPTZ, DEFAULT now()</td><td>Update on every status change</td></tr>
+</table>
+
+<h3>8.6 <code>task_dependencies</code></h3>
+<table class="field-table">
+  <tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+  <tr><td>id</td><td>UUID, PK</td><td></td></tr>
+  <tr><td>task_id</td><td>UUID, FK → tasks.id</td><td>The dependent task</td></tr>
+  <tr><td>depends_on_task_id</td><td>UUID, FK → tasks.id</td><td>The prerequisite task</td></tr>
+  <tr><td>created_at</td><td>TIMESTAMPTZ, DEFAULT now()</td><td></td></tr>
+</table>
+<p class="note">Application-level check required to prevent circular dependencies — not enforceable by a simple FK constraint.</p>
+
+<h3>8.7 <code>workflow_runs</code></h3>
+<table class="field-table">
+  <tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+  <tr><td>id</td><td>UUID, PK</td><td></td></tr>
+  <tr><td>task_id</td><td>UUID, FK → tasks.id</td><td>ON DELETE CASCADE</td></tr>
+  <tr><td>status</td><td>TEXT (enum: pending/running/completed/failed)</td><td></td></tr>
+  <tr><td>started_at</td><td>TIMESTAMPTZ</td><td></td></tr>
+  <tr><td>finished_at</td><td>TIMESTAMPTZ</td><td></td></tr>
+  <tr><td>result_summary</td><td>TEXT</td><td>Short human-readable outcome</td></tr>
+  <tr><td>artifact_ref</td><td>TEXT</td><td>Pointer/ID into the Execution & Artifact Service's storage</td></tr>
+  <tr><td>created_at</td><td>TIMESTAMPTZ, DEFAULT now()</td><td></td></tr>
+</table>
+
+<h4>8.8 Entity Relationship Summary</h4>
+<pre><code>users 1───* auth_sessions
+users 1───* workspaces (created_by)
+users 1───* workspace_members *───1 workspaces
+workspaces 1───* tasks
+tasks 1───* task_dependencies (task_id)
+tasks 1───* task_dependencies (depends_on_task_id)
+tasks 1───* workflow_runs</code></pre>
+
+<h2 id="api">9. API Surface & Contracts</h2>
+
+<h3>9.1 Endpoint Summary</h3>
+<table>
+  <tr><th>Endpoint</th><th>Method</th><th>Auth?</th><th>Status</th></tr>
+  <tr><td><code>/api/health</code></td><td>GET</td><td>No</td><td><span class="tag status-done">Done</span></td></tr>
+  <tr><td><code>/api/auth/register</code></td><td>POST</td><td>No</td><td><span class="tag status-done">Done</span></td></tr>
+  <tr><td><code>/api/auth/register</code> (duplicate email → 409)</td><td>POST</td><td>No</td><td><span class="tag status-next">Next</span></td></tr>
+  <tr><td><code>/api/auth/login</code></td><td>POST</td><td>No</td><td><span class="tag status-next">Next</span></td></tr>
+  <tr><td>Reusable <code>verifyToken</code> middleware</td><td>—</td><td>—</td><td><span class="tag status-next">Next</span></td></tr>
+  <tr><td><code>/api/auth/logout</code></td><td>POST</td><td>Yes</td><td><span class="tag status-planned">Planned</span></td></tr>
+  <tr><td><code>/api/workspaces</code></td><td>GET/POST</td><td>Yes</td><td><span class="tag status-planned">Planned</span></td></tr>
+  <tr><td><code>/api/workspaces/:id</code></td><td>GET/PATCH/DELETE</td><td>Yes</td><td><span class="tag status-planned">Planned</span></td></tr>
+  <tr><td><code>/api/workspaces/:id/members</code></td><td>GET/POST/DELETE</td><td>Yes</td><td><span class="tag status-planned">Planned</span></td></tr>
+  <tr><td><code>/api/workspaces/:id/tasks</code></td><td>GET/POST</td><td>Yes</td><td><span class="tag status-planned">Planned</span></td></tr>
+  <tr><td><code>/api/tasks/:id</code></td><td>GET/PATCH/DELETE</td><td>Yes</td><td><span class="tag status-planned">Planned</span></td></tr>
+  <tr><td><code>/api/tasks/:id/dependencies</code></td><td>GET/POST</td><td>Yes</td><td><span class="tag status-planned">Planned</span></td></tr>
+  <tr><td><code>/api/tasks/:id/workflow-runs</code></td><td>GET/POST</td><td>Yes</td><td><span class="tag status-planned">Planned</span></td></tr>
+  <tr><td><code>/api/workflow-runs/:id</code></td><td>PATCH</td><td>Yes (service token)</td><td><span class="tag status-planned">Planned</span> — called by AI Agent Service</td></tr>
+</table>
+
+<h3>9.2 Example: Register</h3>
+<p><strong>Request</strong></p>
+<pre><code>POST /api/auth/register
+Content-Type: application/json
+
+{
+  "email": "harendra@example.com",
+  "password": "a-strong-password",
+  "display_name": "Harendra"
+}</code></pre>
+<p><strong>Response — 201 Created</strong></p>
+<pre><code>{
+  "user": {
+    "id": "b3f1...uuid",
+    "email": "harendra@example.com",
+    "display_name": "Harendra",
+    "created_at": "2026-09-13T10:00:00Z"
+  },
+  "token": "eyJhbGciOi..."
+}</code></pre>
+<p><strong>Response — 409 Conflict (duplicate email)</strong></p>
+<pre><code>{
+  "error": "EMAIL_ALREADY_REGISTERED",
+  "message": "An account with this email already exists."
+}</code></pre>
+
+<h3>9.3 Example: Login</h3>
+<pre><code>POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "harendra@example.com",
+  "password": "a-strong-password"
+}</code></pre>
+<p><strong>Response — 200 OK</strong></p>
+<pre><code>{
+  "user": { "id": "b3f1...uuid", "email": "harendra@example.com" },
+  "token": "eyJhbGciOi..."
+}</code></pre>
+<p><strong>Response — 401 Unauthorized (bad credentials, either wrong email or wrong password)</strong></p>
+<pre><code>{
+  "error": "INVALID_CREDENTIALS",
+  "message": "Email or password is incorrect."
+}</code></pre>
+
+<h3>9.4 Example: Create Task</h3>
+<pre><code>POST /api/workspaces/:workspaceId/tasks
+Authorization: Bearer &lt;jwt&gt;
+Content-Type: application/json
+
+{
+  "title": "Summarize competitor pricing pages",
+  "description": "Scrape and summarize pricing for 5 competitors",
+  "assignee_type": "agent",
+  "assignee_id": "agent-scraper-01",
+  "priority": "high",
+  "due_date": "2026-09-20T00:00:00Z"
+}</code></pre>
+<p><strong>Response — 201 Created</strong></p>
+<pre><code>{
+  "task": {
+    "id": "9c2e...uuid",
+    "workspace_id": "...",
+    "title": "Summarize competitor pricing pages",
+    "status": "pending",
+    "assignee_type": "agent",
+    "assignee_id": "agent-scraper-01",
+    "created_at": "2026-09-13T10:05:00Z"
+  }
+}</code></pre>
+
+<h2 id="errors">10. Error Handling & Status Codes</h2>
+<table>
+  <tr><th>Status</th><th>Used when</th></tr>
+  <tr><td>200 OK</td><td>Successful GET/PATCH</td></tr>
+  <tr><td>201 Created</td><td>Successful POST that creates a resource</td></tr>
+  <tr><td>400 Bad Request</td><td>Validation failure (missing field, wrong type, circular dependency, etc.)</td></tr>
+  <tr><td>401 Unauthorized</td><td>Missing/invalid/expired JWT, or bad login credentials</td></tr>
+  <tr><td>403 Forbidden</td><td>Authenticated but not authorized (e.g. not a workspace member)</td></tr>
+  <tr><td>404 Not Found</td><td>Resource does not exist (or is hidden intentionally — pick one convention, see FR-5)</td></tr>
+  <tr><td>409 Conflict</td><td>Duplicate email on registration, duplicate workspace membership</td></tr>
+  <tr><td>500 Internal Server Error</td><td>Unexpected server-side failure — always logged, never leaks internals to the client</td></tr>
+</table>
+<p class="note">Every error response follows the same shape: <code>{ "error": "MACHINE_READABLE_CODE", "message": "human readable" }</code>. This lets the frontend branch on <code>error</code> without parsing free text.</p>
+
+<h2 id="stack">11. Technology Stack</h2>
+<table>
+  <tr><th>Layer</th><th>Choice</th></tr>
+  <tr><td>OS (dev)</td><td>Fedora Linux 44</td></tr>
+  <tr><td>Runtime</td><td>Node.js v22</td></tr>
+  <tr><td>Web framework</td><td>Express</td></tr>
+  <tr><td>Database</td><td>PostgreSQL (installed via <code>dnf</code>)</td></tr>
+  <tr><td>DB driver</td><td><code>pg</code>, with a connection pool</td></tr>
+  <tr><td>Auth</td><td><code>bcrypt</code> (hashing), <code>jsonwebtoken</code> (JWT)</td></tr>
+  <tr><td>Config</td><td><code>dotenv</code></td></tr>
+  <tr><td>CORS</td><td><code>cors</code></td></tr>
+  <tr><td>Project structure</td><td>MVC-style: <code>src/config</code>, <code>src/routes</code>, <code>src/controllers</code>, <code>src/middleware</code>, <code>src/db</code></td></tr>
+</table>
+
+<h2 id="testing">12. Testing Strategy</h2>
+<ul>
+  <li><strong>Manual API testing</strong> during development (curl / Postman / Thunder Client) — this is how <code>register</code> was verified and how <code>login</code> and the duplicate-email case will be verified next.</li>
+  <li><strong>Unit tests</strong> for pure logic: password hashing wrapper, JWT sign/verify wrapper, circular-dependency detection for tasks. <span class="note">(planned, not yet started)</span></li>
+  <li><strong>Integration tests</strong> against a real (test) PostgreSQL database for each endpoint's happy path and key error paths (400/401/403/404/409).</li>
+  <li><strong>Cross-service testing</strong> once the AI Agent Service is ready: a mock/stub workflow run update to confirm the Workspace & Task Service accepts and stores it correctly.</li>
+</ul>
+
+<h2 id="deployment">13. Deployment & Environment</h2>
+<ul>
+  <li><strong>Local development:</strong> PostgreSQL running locally via Fedora's <code>dnf</code>-installed package, app run with <code>node</code> directly (or <code>nodemon</code> for auto-restart during development).</li>
+  <li><strong>Configuration:</strong> all secrets and environment-specific values (DB host/user/password, JWT secret, port) live in a <code>.env</code> file, loaded via <code>dotenv</code>, and are never committed to source control.</li>
+  <li><strong>Database user:</strong> the app connects as the low-privilege <code>app_user</code>, not a PostgreSQL superuser — limits blast radius if credentials ever leak.</li>
+  <li><strong>Production/demo deployment:</strong> <span class="note">to be decided by the team — options include a single VM running all backend pieces, or containerizing each service with Docker for the final demo.</span></li>
+</ul>
+
+<h2 id="status">14. Current Status</h2>
+<div class="card">
+  <p><strong>Completed:</strong></p>
+  <ul>
+    <li>PostgreSQL installed, initialized, and configured with a dedicated low-privilege user (<code>app_user</code>) and database (<code>myapp_db</code>)</li>
+    <li>Project structured as an MVC-style Express app</li>
+    <li>7-table schema applied to the database</li>
+    <li>Health-check endpoint verified</li>
+    <li><code>POST /api/auth/register</code> implemented, tested, and returns a JWT with no password data exposed</li>
+    <li>Learning log (<code>docs/PROGRESS.md</code>) maintained alongside all of the above</li>
+  </ul>
+  <p><strong>Immediate next steps:</strong></p>
+  <ol>
+    <li>Test duplicate-email registration (expect <code>409</code>)</li>
+    <li>Implement <code>POST /api/auth/login</code> using <code>bcrypt.compare</code></li>
+    <li>Build reusable <code>verifyToken</code> middleware</li>
+  </ol>
+</div>
+
+<h2 id="milestones">15. Milestones & Timeline</h2>
+<table>
+  <tr><th>Milestone</th><th>Description</th><th>Owner</th></tr>
+  <tr><td>M1 — Foundations</td><td>Environment, DB, schema, health check <em>(complete)</em></td><td>Harendra</td></tr>
+  <tr><td>M2 — Auth Complete</td><td>Register, login, duplicate-email handling, JWT middleware, session tracking</td><td>Harendra</td></tr>
+  <tr><td>M3 — Workspaces & Tasks</td><td>CRUD for workspaces, members, tasks, dependencies</td><td>Harendra</td></tr>
+  <tr><td>M4 — Workflow Integration</td><td>Workflow runs wired to AI Agent Service calls (contract from Section 9)</td><td>Harendra + AI Agent teammate</td></tr>
+  <tr><td>M5 — Cross-Service Integration</td><td>End-to-end flow across all services + frontend</td><td>Whole team</td></tr>
+  <tr><td>M6 — Polish & Docs</td><td>Error handling, edge cases, final documentation pass, demo prep</td><td>Whole team</td></tr>
+</table>
+
+<h2 id="risks">16. Assumptions, Constraints & Risks</h2>
+<ul>
+  <li><strong>Assumption:</strong> teammates' services will expose stable HTTP APIs that the Workspace & Task Service can call synchronously (no message queue in v1).</li>
+  <li><strong>Constraint:</strong> a single developer for two of four backend services limits parallel velocity on that side of the system — realistic milestone pacing should account for this.</li>
+  <li><strong>Risk:</strong> integration between independently-built services (auth token format, request/response shapes) may drift if not agreed early — mitigated by publishing Section 9's contracts to the team before each service is built.</li>
+  <li><strong>Risk:</strong> consolidating two services into one app is a deliberate deviation from the original spec; worth flagging explicitly to the instructor/grader, with the reasoning in Section 5 as justification.</li>
+  <li><strong>Risk:</strong> circular task dependencies or orphaned workflow runs (e.g. agent crashes mid-run) need explicit handling, not just happy-path code.</li>
+</ul>
+
+<h2 id="success">17. Success Criteria</h2>
+<ul>
+  <li>A user can register, log in, create a workspace, create a task, and see it executed by an agent with a resulting artifact — all through the frontend.</li>
+  <li>No plaintext passwords or sensitive data ever appear in API responses or logs.</li>
+  <li>All database queries are parameterized; the schema enforces referential integrity via foreign keys.</li>
+  <li>Every error case in Section 10 returns the correct status code and a consistent error shape.</li>
+  <li><code>docs/PROGRESS.md</code> reflects and explains every major decision made during the build, in enough depth that Harendra could re-derive the reasoning months later.</li>
+</ul>
+
+<h2 id="glossary">18. Glossary</h2>
+<table>
+  <tr><th>Term</th><th>Meaning</th></tr>
+  <tr><td>Workspace</td><td>A container for a group of users and their tasks — roughly analogous to a "project" or "team space".</td></tr>
+  <tr><td>Task</td><td>A single unit of work, assignable to a human or an AI agent.</td></tr>
+  <tr><td>Workflow Run</td><td>One execution attempt of a task by an AI agent; a task can have multiple runs over time.</td></tr>
+  <tr><td>Artifact</td><td>Any output produced by an agent's execution — a file, a report, structured data — stored by the Execution & Artifact Service.</td></tr>
+  <tr><td>JWT</td><td>JSON Web Token — a signed (not encrypted) token proving who a user is, without the server needing to store session state for every request.</td></tr>
+  <tr><td>bcrypt</td><td>A one-way password hashing algorithm — passwords are hashed, never encrypted, because hashing cannot be reversed even by the server.</td></tr>
+</table>
+
+</body>
+</html>

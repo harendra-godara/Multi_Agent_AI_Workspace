@@ -1,0 +1,140 @@
+openapi: 3.0.3
+info:
+  title: Multi-Agent AI Workspace - Task Service
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+paths:
+  /tasks:
+    post:
+      summary: Create a task
+      operationId: createTask
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              schema: {type: string}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TaskResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/UnprocessableEntity'}
+    get:
+      summary: List tasks
+      operationId: listTasks
+      parameters:
+        - in: query
+          name: status
+          schema: {type: string, enum: [pending, running, completed, cancelled, failed]}
+      responses:
+        '200':
+          description: Task list
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TaskListResponse'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+  /tasks/{taskId}:
+    get:
+      summary: Get one task
+      operationId: getTask
+      parameters:
+        - {$ref: '#/components/parameters/TaskId'}
+      responses:
+        '200':
+          description: Task
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TaskResponse'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /tasks/{taskId}/cancellation:
+    post:
+      summary: Cancel task
+      operationId: cancelTask
+      parameters:
+        - {$ref: '#/components/parameters/TaskId'}
+      responses:
+        '202':
+          description: Cancellation accepted
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TaskResponse'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '422': {$ref: '#/components/responses/UnprocessableEntity'}
+components:
+  parameters:
+    TaskId:
+      in: path
+      name: taskId
+      required: true
+      schema: {type: string}
+    IdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      schema: {type: string}
+  schemas:
+    CreateTaskRequest:
+      type: object
+      required: [workspace_id, title, description]
+      properties:
+        workspace_id: {type: string}
+        title: {type: string, minLength: 1}
+        description: {type: string, minLength: 1}
+        priority: {type: string, enum: [low, medium, high], default: medium}
+    TaskResponse:
+      type: object
+      required: [id, workspace_id, title, description, priority, status, created_at]
+      properties:
+        id: {type: string}
+        workspace_id: {type: string}
+        title: {type: string}
+        description: {type: string}
+        priority: {type: string}
+        status: {type: string}
+        created_at: {type: string, format: date-time}
+    TaskListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: {$ref: '#/components/schemas/TaskResponse'}
+    Problem:
+      type: object
+      required: [type, title, status, detail]
+      properties:
+        type: {type: string}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Problem'}
+    UnprocessableEntity:
+      description: Domain rejection
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/Problem'}

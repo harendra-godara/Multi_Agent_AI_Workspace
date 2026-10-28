@@ -1,0 +1,8 @@
+# Assignment 6 curl transcript
+Happy path: POST /tasks -> 201 Created, Location: /tasks/task-1, application/json.
+Validation: POST /tasks with empty title/short description -> 422 Problem Details with two errors[] entries.
+Unknown id: GET /tasks/unknown -> 404 task-not-found.
+Illegal transition: POST /tasks/task-1/run after completion -> 409 illegal-transition.
+Rate limit: repeated requests -> 429 + Retry-After: 30.
+Negotiation: GET /tasks/task-1 with Accept: application/xml -> 200 + application/xml; charset=utf-8.
+Dependency outage: runTask -> 503 + Retry-After: 3.

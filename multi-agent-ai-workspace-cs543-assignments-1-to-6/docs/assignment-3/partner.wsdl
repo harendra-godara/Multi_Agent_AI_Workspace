@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://multiagent.example/cs543" targetNamespace="http://multiagent.example/cs543">
+<message name="ValidateArtifactRequest"><part name="workflowRunId" type="xsd:string"/><part name="artifactRef" type="xsd:string"/></message>
+<message name="ValidateArtifactResponse"><part name="verdict" type="xsd:string"/><part name="score" type="xsd:decimal"/><part name="comments" type="xsd:string"/></message>
+<message name="ValidateArtifactFault"><part name="code" type="xsd:string"/><part name="message" type="xsd:string"/></message>
+<portType name="ArtifactValidationPortType"><operation name="validateArtifact"><input message="tns:ValidateArtifactRequest"/><output message="tns:ValidateArtifactResponse"/><fault name="ValidationFault" message="tns:ValidateArtifactFault"/></operation></portType>
+<binding name="ArtifactValidationSoapBinding" type="tns:ArtifactValidationPortType"><soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/><operation name="validateArtifact"><soap:operation soapAction="validateArtifact"/><input><soap:body use="literal"/></input><output><soap:body use="literal"/></output><fault name="ValidationFault"><soap:fault name="ValidationFault" use="literal"/></fault></operation></binding>
+<service name="ExternalArtifactValidationPartner"><port name="ArtifactValidationPort" binding="tns:ArtifactValidationSoapBinding"><soap:address location="https://partner.example.invalid/soap/artifact-validation"/></port></service>
+</definitions>
