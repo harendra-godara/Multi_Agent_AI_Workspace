@@ -1,8 +1,8 @@
 const pool = require('../config/db');
+const { UUID_REGEX, EMAIL_REGEX } = require('../utils/validators');
 
 const CAN_INVITE = ['Owner', 'Admin'];
 const INVITABLE_ROLES = ['Member', 'Admin'];
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 async function listMembers(req, res) {
   try {
@@ -76,4 +76,94 @@ async function inviteMember(req, res) {
   }
 }
 
-module.exports = { listMembers, inviteMember };
+// Removes an active member, or cancels a pending invite.
+async function removeMember(req, res) {
+  const memberId = req.params.memberId;
+
+  if (!CAN_INVITE.includes(req.memberRole)) {
+    return res.status(403).json({ message: 'Only owners and admins can remove members' });
+  }
+  if (!UUID_REGEX.test(memberId)) {
+    return res.status(404).json({ message: 'Member not found' });
+  }
+
+  try {
+    const target = await pool.query(
+      'SELECT id, role FROM workspace_members WHERE id = $1 AND workspace_id = $2',
+      [memberId, req.workspaceId]
+    );
+    if (target.rows.length === 0) {
+      return res.status(404).json({ message: 'Member not found' });
+    }
+
+    const { role } = target.rows[0];
+    if (role === 'Owner') {
+      return res.status(403).json({ message: 'The owner cannot be removed' });
+    }
+    if (req.memberRole === 'Admin' && role === 'Admin') {
+      return res.status(403).json({ message: 'Admins cannot remove other admins' });
+    }
+
+    await pool.query('DELETE FROM workspace_members WHERE id = $1', [memberId]);
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+}
+
+async function updateMemberRole(req, res) {
+  const memberId = req.params.memberId;
+  const { role } = req.body;
+
+  if (req.memberRole !== 'Owner') {
+    return res.status(403).json({ message: 'Only the owner can change roles' });
+  }
+  if (!UUID_REGEX.test(memberId)) {
+    return res.status(404).json({ message: 'Member not found' });
+  }
+  if (!INVITABLE_ROLES.includes(role)) {
+    return res.status(400).json({ message: "Role must be 'Member' or 'Admin'" });
+  }
+
+  try {
+    const target = await pool.query(
+      'SELECT id, role FROM workspace_members WHERE id = $1 AND workspace_id = $2',
+      [memberId, req.workspaceId]
+    );
+    if (target.rows.length === 0) {
+      return res.status(404).json({ message: 'Member not found' });
+    }
+    if (target.rows[0].role === 'Owner') {
+      return res.status(403).json({ message: "The owner's role cannot be changed" });
+    }
+
+    const updated = await pool.query(
+      'UPDATE workspace_members SET role = $1 WHERE id = $2 RETURNING id, email, role, status',
+      [role, memberId]
+    );
+    res.json(updated.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+}
+
+async function leaveWorkspace(req, res) {
+  if (req.memberRole === 'Owner') {
+    return res.status(403).json({ message: 'The owner cannot leave; delete the workspace instead' });
+  }
+
+  try {
+    await pool.query(
+      'DELETE FROM workspace_members WHERE workspace_id = $1 AND user_id = $2',
+      [req.workspaceId, req.user.id]
+    );
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+}
+
+module.exports = { listMembers, inviteMember, removeMember, updateMemberRole, leaveWorkspace };

@@ -1,12 +1,15 @@
+const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
+const { EMAIL_REGEX } = require('../utils/validators');
+const { createSession, revokeSession, revokeAllSessions } = require('../utils/sessions');
 
 function generateToken(user) {
   return jwt.sign(
     { id: user.id, email: user.email },
     process.env.JWT_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: '7d', jwtid: crypto.randomUUID() }
   );
 }
 
@@ -16,6 +19,15 @@ async function register(req, res) {
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'name, email and password are required' });
+    }
+    if (typeof name !== 'string' || typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ message: 'name, email and password must be strings' });
+    }
+    if (!EMAIL_REGEX.test(email.trim())) {
+      return res.status(400).json({ message: 'A valid email is required' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
     }
 
     const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
@@ -27,14 +39,18 @@ async function register(req, res) {
 
     const result = await pool.query(
       'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email, created_at',
-      [name, email, passwordHash]
+      [name.trim(), email, passwordHash]
     );
 
     const user = result.rows[0];
     const token = generateToken(user);
+    await createSession(user.id, token);
 
     res.status(201).json({ token, user });
   } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ message: 'Email already registered' });
+    }
     console.error(err);
     res.status(500).json({ message: 'Something went wrong' });
   }
@@ -46,6 +62,9 @@ async function login(req, res) {
 
     if (!email || !password) {
       return res.status(400).json({ message: 'email and password are required' });
+    }
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ message: 'email and password must be strings' });
     }
 
     const result = await pool.query(
@@ -64,7 +83,8 @@ async function login(req, res) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const token = generateTken(user);
+    const token = generateToken(user);
+    await createSession(user.id, token);
 
     res.json({
       token,
@@ -75,7 +95,6 @@ async function login(req, res) {
     res.status(500).json({ message: 'Something went wrong' });
   }
 }
-
 
 async function me(req, res) {
   try {
@@ -95,4 +114,24 @@ async function me(req, res) {
   }
 }
 
-module.exports = { register, login, me, generateToken };
+async function logout(req, res) {
+  try {
+    await revokeSession(req.token);
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+}
+
+async function logoutAll(req, res) {
+  try {
+    await revokeAllSessions(req.user.id);
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+}
+
+module.exports = { register, login, me, logout, logoutAll, generateToken };

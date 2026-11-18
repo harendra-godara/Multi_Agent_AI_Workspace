@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Multi-Agent AI Workspace - Tasks (REST)</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <h1>Tasks</h1>
+  <p class="sub">Multi-Agent AI Workspace &middot; REST API (GET /items, POST /items)</p>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>ID</th><th>Title</th><th>Agent</th><th>Status</th><th>Priority</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Add a task</h3>
+    <form id="form">
+      <input id="title" placeholder="Task title *">
+      <input id="agent" placeholder="Assigned agent">
+      <select id="status">
+        <option value="pending">pending</option>
+        <option value="in_progress">in_progress</option>
+        <option value="done">done</option>
+      </select>
+      <input id="priority" type="number" min="1" max="5" value="1" title="Priority">
+      <button type="submit">Add</button>
+    </form>
+    <div id="msg"></div>
+  </div>
+</main>
+
+<script>
+  const rows = document.getElementById('rows');
+  const msg = document.getElementById('msg');
+
+  async function loadItems() {
+    const res = await fetch('/items');
+    const items = await res.json();
+    rows.innerHTML = items.map(i => `
+      <tr>
+        <td>${i.id}</td><td>${escapeHtml(i.title)}</td><td>${escapeHtml(i.assignedAgent)}</td>
+        <td><span class="badge ${i.status}">${i.status}</span></td><td>${i.priority}</td>
+      </tr>`).join('');
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  document.getElementById('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = {
+      title: document.getElementById('title').value,
+      assignedAgent: document.getElementById('agent').value || undefined,
+      status: document.getElementById('status').value,
+      priority: Number(document.getElementById('priority').value) || 1,
+    };
+    const res = await fetch('/items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (res.status === 201) {
+      msg.className = 'ok'; msg.textContent = `Created (201): #${data.id} ${data.title}`;
+      e.target.reset(); await loadItems();
+    } else {
+      msg.className = 'err'; msg.textContent = `Error (${res.status}): ${data.error}`;
+    }
+  });
+
+  loadItems();
+</script>
+</body>
+</html>

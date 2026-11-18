@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Multi-Agent AI Workspace - Tasks (GraphQL)</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: #f4f6fb; margin: 0; color: #1f2937; }
+    main { max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { margin-bottom: .2rem; }
+    .sub { color: #6b7280; margin-top: 0; }
+    .card { background: #fff; border-radius: 10px; padding: 1rem 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 1.25rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .5rem .4rem; border-bottom: 1px solid #e5e7eb; }
+    th { font-size: .8rem; text-transform: uppercase; color: #6b7280; }
+    .badge { padding: .15rem .55rem; border-radius: 999px; font-size: .78rem; background: #e5e7eb; }
+    .badge.done { background: #d1fae5; } .badge.in_progress { background: #fef3c7; } .badge.pending { background: #e0e7ff; }
+    form { display: grid; grid-template-columns: 2fr 1.2fr 1fr auto; gap: .5rem; }
+    input, button { padding: .5rem; border: 1px solid #d1d5db; border-radius: 6px; font: inherit; }
+    button { background: #e10098; color: #fff; border: none; cursor: pointer; }
+    button:hover { background: #b8007d; }
+    #msg { margin-top: .6rem; min-height: 1.2rem; font-size: .9rem; }
+    .err { color: #b91c1c; } .ok { color: #047857; }
+    @media (max-width: 640px) { form { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Tasks</h1>
+  <p class="sub">Multi-Agent AI Workspace &middot; GraphQL (query <code>tasks</code>, mutation <code>addTask</code>)</p>
+
+  <div class="card">
+    <table>
+      <thead><tr><th>ID</th><th>Title</th><th>Agent</th><th>Status</th><th>Priority</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Add a task</h3>
+    <form id="form">
+      <input id="title" placeholder="Task title *">
+      <input id="agent" placeholder="Assigned agent">
+      <input id="priority" type="number" min="1" max="5" value="1" title="Priority">
+      <button type="submit">Add task</button>
+    </form>
+    <div id="msg"></div>
+  </div>
+</main>
+
+<script>
+  const rows = document.getElementById('rows');
+  const msg = document.getElementById('msg');
+
+  // One small helper: every GraphQL call is a POST of { query, variables } to /graphql
+  async function gql(query, variables = {}) {
+    const res = await fetch('/graphql', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, variables }),
+    });
+    const json = await res.json();
+    if (json.errors) throw new Error(json.errors[0].message);
+    return json.data;
+  }
+
+  const LIST_QUERY = `query { tasks { id title assignedAgent status priority } }`;
+
+  const ADD_MUTATION = `
+    mutation AddTask($input: AddTaskInput!) {
+      addTask(input: $input) { id title assignedAgent status priority }
+    }`;
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  async function loadTasks() {
+    const data = await gql(LIST_QUERY);
+    rows.innerHTML = data.tasks.map(t => `
+      <tr>
+        <td>${t.id}</td><td>${escapeHtml(t.title)}</td><td>${escapeHtml(t.assignedAgent || '-')}</td>
+        <td><span class="badge ${t.status}">${t.status}</span></td><td>${t.priority}</td>
+      </tr>`).join('');
+  }
+
+  document.getElementById('form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const input = { title: document.getElementById('title').value.trim() };
+    const agent = document.getElementById('agent').value.trim();
+    if (agent) input.assignedAgent = agent;                       // optional field: skipped if empty
+    input.priority = Number(document.getElementById('priority').value) || 1;
+    try {
+      const data = await gql(ADD_MUTATION, { input });
+      msg.className = 'ok'; msg.textContent = `Added task #${data.addTask.id}: ${data.addTask.title}`;
+      e.target.reset(); await loadTasks();
+    } catch (err) {
+      msg.className = 'err'; msg.textContent = err.message;
+    }
+  });
+
+  loadTasks().catch(err => { msg.className = 'err'; msg.textContent = err.message; });
+</script>
+</body>
+</html>

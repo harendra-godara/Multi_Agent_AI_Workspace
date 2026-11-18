@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
+const { isSessionActive } = require('../utils/sessions');
 
-function verifyToken(req, res, next) {
+async function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -11,10 +12,20 @@ function verifyToken(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (!(await isSessionActive(token))) {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+
     req.user = { id: decoded.id, email: decoded.email };
+    req.token = token;
     next();
   } catch (err) {
-    return res.status(401).json({ message: 'Invalid or expired token' });
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError' || err.name === 'NotBeforeError') {
+      return res.status(401).json({ message: 'Invalid or expired token' });
+    }
+    console.error(err);
+    return res.status(500).json({ message: 'Something went wrong' });
   }
 }
 

@@ -1,0 +1,1601 @@
+openapi: 3.0.3
+info:
+  title: Multi-Agent AI Workspace API
+  version: 1.0.0
+  description: 'Identity & Access Service and Workspace & Task Service.
+
+
+    Errors are always {"message": "..."} . 404 is used (instead of 403) when a caller must not learn that a resource
+    exists.'
+servers:
+- url: http://localhost:5000
+tags:
+- name: System
+- name: Auth
+- name: Workspaces
+- name: Members
+- name: Invites
+- name: Tasks
+- name: Dependencies
+- name: Runs
+paths:
+  /api/health:
+    get:
+      tags:
+      - System
+      summary: Health check (also checks the database)
+      responses:
+        '200':
+          description: OK
+        '500':
+          description: Database unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security: []
+  /api/auth/register:
+    post:
+      tags:
+      - Auth
+      summary: Register a new user
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict with the current state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - name
+              - email
+              - password
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+      security: []
+  /api/auth/login:
+    post:
+      tags:
+      - Auth
+      summary: Log in
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      security: []
+  /api/auth/me:
+    get:
+      tags:
+      - Auth
+      summary: Current user
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/auth/logout:
+    post:
+      tags:
+      - Auth
+      summary: Revoke the current token
+      responses:
+        '204':
+          description: Logged out
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/auth/logout-all:
+    post:
+      tags:
+      - Auth
+      summary: Revoke every session of the current user
+      responses:
+        '204':
+          description: All sessions revoked
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/workspaces:
+    get:
+      tags:
+      - Workspaces
+      summary: List my workspaces
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workspace'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Workspaces
+      summary: Create a workspace (caller becomes Owner)
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - name
+              properties:
+                name:
+                  type: string
+                  maxLength: 150
+                description:
+                  type: string
+      security:
+      - bearerAuth: []
+  /api/workspaces/{id}:
+    get:
+      tags:
+      - Workspaces
+      summary: Get a workspace
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceDetail'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workspace not found, or the caller is not an active member (existence is hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Workspace id
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Workspaces
+      summary: Update name/description (Owner, Admin)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Authenticated but the role is not allowed to do this
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workspace not found, or the caller is not an active member (existence is hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Workspace id
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 150
+                description:
+                  type: string
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Workspaces
+      summary: Delete a workspace and everything in it (Owner)
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Authenticated but the role is not allowed to do this
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workspace not found, or the caller is not an active member (existence is hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Workspace id
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+  /api/workspaces/{id}/leave:
+    post:
+      tags:
+      - Members
+      summary: Leave a workspace (not allowed for the Owner)
+      responses:
+        '204':
+          description: Left
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Authenticated but the role is not allowed to do this
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workspace not found, or the caller is not an active member (existence is hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Workspace id
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+  /api/workspaces/{id}/members:
+    get:
+      tags:
+      - Members
+      summary: List members and pending invites
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workspace not found, or the caller is not an active member (existence is hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Workspace id
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+  /api/workspaces/{id}/invite:
+    post:
+      tags:
+      - Members
+      summary: Invite an email (Owner, Admin)
+      responses:
+        '201':
+          description: Created (status Pending)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Authenticated but the role is not allowed to do this
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workspace not found, or the caller is not an active member (existence is hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict with the current state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Workspace id
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum:
+                  - Member
+                  - Admin
+                  default: Member
+      security:
+      - bearerAuth: []
+  /api/workspaces/{id}/members/{memberId}:
+    patch:
+      tags:
+      - Members
+      summary: Change a role (Owner only; the Owner row cannot be changed)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Authenticated but the role is not allowed to do this
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workspace not found, or the caller is not an active member (existence is hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Workspace id
+        schema:
+          type: string
+          format: uuid
+      - name: memberId
+        in: path
+        required: true
+        description: Workspace member id (also the invite id while Pending)
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - role
+              properties:
+                role:
+                  type: string
+                  enum:
+                  - Member
+                  - Admin
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Members
+      summary: Remove a member or cancel a pending invite (Owner, Admin; Admins cannot remove Admins)
+      responses:
+        '204':
+          description: Removed
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Authenticated but the role is not allowed to do this
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workspace not found, or the caller is not an active member (existence is hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Workspace id
+        schema:
+          type: string
+          format: uuid
+      - name: memberId
+        in: path
+        required: true
+        description: Workspace member id (also the invite id while Pending)
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+  /api/invites:
+    get:
+      tags:
+      - Invites
+      summary: Invites addressed to my email
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invite'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+      - bearerAuth: []
+  /api/invites/{id}/accept:
+    post:
+      tags:
+      - Invites
+      summary: Accept an invite (only the invited user)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Invite not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Invite id
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+  /api/invites/{id}/decline:
+    post:
+      tags:
+      - Invites
+      summary: Decline an invite (only the invited user)
+      responses:
+        '204':
+          description: Declined
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Invite not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Invite id
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+  /api/workspaces/{id}/tasks:
+    get:
+      tags:
+      - Tasks
+      summary: List tasks of a workspace
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workspace not found, or the caller is not an active member (existence is hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Workspace id
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - pending
+          - running
+          - completed
+          - failed
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Tasks
+      summary: Create a task (status starts as pending)
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workspace not found, or the caller is not an active member (existence is hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: Workspace id
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - title
+              properties:
+                title:
+                  type: string
+                  maxLength: 200
+                description:
+                  type: string
+      security:
+      - bearerAuth: []
+  /api/tasks:
+    get:
+      tags:
+      - Tasks
+      summary: List tasks (flat form; workspaceId in the query)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workspace not found, or the caller is not an active member (existence is hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: workspaceId
+        in: query
+        required: false
+        description: workspaceId
+        schema:
+          type: string
+          format: uuid
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - pending
+          - running
+          - completed
+          - failed
+      - name: limit
+        in: query
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        schema:
+          type: integer
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Tasks
+      summary: Create a task (flat form; workspaceId in the body)
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workspace not found, or the caller is not an active member (existence is hidden)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - workspaceId
+              - title
+              properties:
+                workspaceId:
+                  type: string
+                  format: uuid
+                title:
+                  type: string
+                description:
+                  type: string
+      security:
+      - bearerAuth: []
+  /api/tasks/{taskId}:
+    get:
+      tags:
+      - Tasks
+      summary: Get a task with dependencies and latest run
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskDetail'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found, or the caller is not a member of its workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: taskId
+        in: path
+        required: true
+        description: Task id
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Tasks
+      summary: Edit title/description or change status
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found, or the caller is not a member of its workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 'Status change not allowed. By hand only: pending->completed, running->pending (cancels the
+            active run), failed->pending, completed->pending. pending->running happens only through /run.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: taskId
+        in: path
+        required: true
+        description: Task id
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                status:
+                  type: string
+                  enum:
+                  - pending
+                  - running
+                  - completed
+                  - failed
+      security:
+      - bearerAuth: []
+    delete:
+      tags:
+      - Tasks
+      summary: Delete a task (creator, Owner or Admin; not while running)
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Authenticated but the role is not allowed to do this
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found, or the caller is not a member of its workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict with the current state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: taskId
+        in: path
+        required: true
+        description: Task id
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+  /api/tasks/{taskId}/dependencies:
+    get:
+      tags:
+      - Dependencies
+      summary: Tasks this task depends on
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dependency'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found, or the caller is not a member of its workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: taskId
+        in: path
+        required: true
+        description: Task id
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Dependencies
+      summary: Add a dependency (task must be pending; cycles are rejected)
+      responses:
+        '201':
+          description: Created
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found, or the caller is not a member of its workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Duplicate, circular, or task not pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: taskId
+        in: path
+        required: true
+        description: Task id
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - dependsOnTaskId
+              properties:
+                dependsOnTaskId:
+                  type: string
+                  format: uuid
+      security:
+      - bearerAuth: []
+  /api/tasks/{taskId}/dependencies/{dependsOnId}:
+    delete:
+      tags:
+      - Dependencies
+      summary: Remove a dependency
+      responses:
+        '204':
+          description: Removed
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found, or the caller is not a member of its workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Conflict with the current state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: taskId
+        in: path
+        required: true
+        description: Task id
+        schema:
+          type: string
+          format: uuid
+      - name: dependsOnId
+        in: path
+        required: true
+        description: dependsOnId
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+  /api/tasks/{taskId}/run:
+    post:
+      tags:
+      - Runs
+      summary: Start a run (async)
+      responses:
+        '202':
+          description: 'Accepted: the run is created, the task becomes running, the agent service is notified in
+            the background'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunStarted'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found, or the caller is not a member of its workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Task is not pending, or has dependencies that are not completed (response includes blockedBy)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      description: Returns immediately. Poll GET /api/runs/{runId} or GET /api/tasks/{taskId}; the AI Agent / Execution
+        services report the result through PATCH /api/runs/{runId}.
+      parameters:
+      - name: taskId
+        in: path
+        required: true
+        description: Task id
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+  /api/tasks/{taskId}/runs:
+    get:
+      tags:
+      - Runs
+      summary: Run history of a task (newest first)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Run'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found, or the caller is not a member of its workspace
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: taskId
+        in: path
+        required: true
+        description: Task id
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+  /api/runs/{runId}:
+    get:
+      tags:
+      - Runs
+      summary: Get a run
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+        '401':
+          description: Missing, invalid, expired or revoked token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Run not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        description: Run id
+        schema:
+          type: string
+          format: uuid
+      security:
+      - bearerAuth: []
+    patch:
+      tags:
+      - Runs
+      summary: Report the outcome of a run (service-to-service)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Run'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Missing or invalid X-Service-Key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Run not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Run already finished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: SERVICE_API_KEY is not configured on the backend
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      parameters:
+      - name: runId
+        in: path
+        required: true
+        description: Run id
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                  - completed
+                  - failed
+                result:
+                  type: object
+                  additionalProperties: true
+      security:
+      - serviceKey: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    serviceKey:
+      type: apiKey
+      in: header
+      name: X-Service-Key
+      description: Shared secret between the backend and the agent/execution services (SERVICE_API_KEY)
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT, valid 7 days, revocable via /logout
+        user:
+          $ref: '#/components/schemas/User'
+    Workspace:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        role:
+          type: string
+          enum:
+          - Owner
+          - Admin
+          - Member
+        members:
+          type: integer
+    WorkspaceDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        owner_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        members:
+          type: integer
+        tasks:
+          type: integer
+        role:
+          type: string
+    Member:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          description: Never null; falls back to the part of the email before @
+        email:
+          type: string
+        role:
+          type: string
+          enum:
+          - Owner
+          - Admin
+          - Member
+        status:
+          type: string
+          enum:
+          - Active
+          - Pending
+    Invite:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspaceId:
+          type: string
+          format: uuid
+        workspaceName:
+          type: string
+        role:
+          type: string
+        invitedAt:
+          type: string
+          format: date-time
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum:
+          - pending
+          - running
+          - completed
+          - failed
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Dependency:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        status:
+          type: string
+          enum:
+          - pending
+          - running
+          - completed
+          - failed
+    TaskDetail:
+      allOf:
+      - $ref: '#/components/schemas/Task'
+      - type: object
+        properties:
+          dependencies:
+            type: array
+            items:
+              $ref: '#/components/schemas/Dependency'
+          latestRun:
+            nullable: true
+            type: object
+            properties:
+              id:
+                type: string
+              status:
+                type: string
+              started_at:
+                type: string
+                format: date-time
+              completed_at:
+                type: string
+                format: date-time
+                nullable: true
+    Run:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        task_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - running
+          - completed
+          - failed
+          - cancelled
+        result:
+          type: object
+          nullable: true
+          additionalProperties: true
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+    RunStarted:
+      type: object
+      properties:
+        run:
+          $ref: '#/components/schemas/Run'
+        task:
+          type: object
+          properties:
+            id:
+              type: string
+            status:
+              type: string

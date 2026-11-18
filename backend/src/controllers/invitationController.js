@@ -1,6 +1,5 @@
 const pool = require('../config/db');
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const { UUID_REGEX } = require('../utils/validators');
 
 async function listMyInvites(req, res) {
   try {
@@ -64,4 +63,32 @@ async function acceptInvite(req, res) {
   }
 }
 
-module.exports = { listMyInvites, acceptInvite };
+async function declineInvite(req, res) {
+  const inviteId = req.params.id;
+
+  if (!UUID_REGEX.test(inviteId)) {
+    return res.status(404).json({ message: 'Invite not found' });
+  }
+
+  try {
+    const deleted = await pool.query(
+      `DELETE FROM workspace_members
+       WHERE id = $1
+         AND status = 'Pending'
+         AND LOWER(email) = (SELECT LOWER(email) FROM users WHERE id = $2)
+       RETURNING id`,
+      [inviteId, req.user.id]
+    );
+
+    if (deleted.rows.length === 0) {
+      return res.status(404).json({ message: 'Invite not found' });
+    }
+
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Something went wrong' });
+  }
+}
+
+module.exports = { listMyInvites, acceptInvite, declineInvite };

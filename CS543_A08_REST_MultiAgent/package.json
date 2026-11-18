@@ -1,0 +1,12 @@
+{
+  "name": "multi-agent-workspace-tasks-rest",
+  "version": "1.0.0",
+  "description": "CS543 Assignment 8 - Tasks service of the Multi-Agent AI Workspace as a REST API (Node + Express)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

@@ -1,0 +1,24 @@
+# One object type. "!" = non-null: the server guarantees it is always present,
+# and (in an input) the client must send it.
+type Task {
+  id: ID!
+  title: String!
+  assignedAgent: String        # nullable: a task may not have an agent yet (client/server can skip it)
+  status: String!              # pending | in_progress | done
+  priority: Int!
+}
+
+input AddTaskInput {
+  title: String!               # required
+  assignedAgent: String        # optional
+  priority: Int                # optional (defaults to 1)
+}
+
+type Query {
+  tasks: [Task!]!              # list
+  task(id: ID!): Task          # by id (null if not found)
+}
+
+type Mutation {
+  addTask(input: AddTaskInput!): Task!
+}
