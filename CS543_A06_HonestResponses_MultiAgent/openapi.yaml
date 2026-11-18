@@ -1,0 +1,272 @@
+openapi: 3.0.3
+info:
+  title: Multi-Agent AI Workspace - Tasks service (CS543 A06)
+  version: 2.0.0
+  description: |
+    Same Tasks service as Assignment 5, now with honest status codes and ONE error shape:
+    RFC 9457 Problem Details (`application/problem+json`). Every response carries Content-Type with charset=utf-8.
+    Success bodies are `application/json` by default and `application/xml` if requested with `Accept`.
+servers:
+  - url: http://localhost:3000
+paths:
+  /tasks:
+    get:
+      summary: List tasks (filter / sort / paginate)
+      parameters:
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/Status' } }
+        - { name: agent, in: query, schema: { type: string } }
+        - { name: workspaceId, in: query, schema: { type: string } }
+        - { name: sort, in: query, schema: { type: string, enum: [id, title, createdAt], default: id } }
+        - { name: order, in: query, schema: { type: string, enum: [asc, desc], default: asc } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 10 } }
+      responses:
+        '200':
+          description: A page of tasks
+          headers:
+            X-Total-Count: { schema: { type: integer } }
+            Cache-Control: { schema: { type: string }, description: no-cache }
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/TaskPage' } }
+            application/xml: { schema: { $ref: '#/components/schemas/TaskPage' } }
+        '400': { $ref: '#/components/responses/InvalidQuery' }
+        '406': { $ref: '#/components/responses/NotAcceptable' }
+        '429': { $ref: '#/components/responses/TooMany' }
+    post:
+      summary: Create a task. Validate first, then act. Retry-safe with Idempotency-Key.
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: Idempotency-Key, in: header, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/TaskInput' } }
+      responses:
+        '201':
+          description: Created. Same key + same body replays this response (Idempotent-Replayed true).
+          headers:
+            Location: { schema: { type: string }, description: 'URL of the new task, /tasks/{id}' }
+            ETag: { schema: { type: string } }
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Task' } }
+            application/xml: { schema: { $ref: '#/components/schemas/Task' } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '406': { $ref: '#/components/responses/NotAcceptable' }
+        '415': { $ref: '#/components/responses/BadRequest' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '429': { $ref: '#/components/responses/TooMany' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /tasks/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      summary: Read one task
+      parameters:
+        - { name: If-None-Match, in: header, schema: { type: string } }
+      responses:
+        '200':
+          description: The task
+          headers:
+            ETag: { schema: { type: string } }
+            Cache-Control: { schema: { type: string } }
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Task' } }
+            application/xml: { schema: { $ref: '#/components/schemas/Task' } }
+        '304': { description: Not modified (no body) }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '406': { $ref: '#/components/responses/NotAcceptable' }
+        '429': { $ref: '#/components/responses/TooMany' }
+    put:
+      summary: Replace title, workspaceId and steps
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: If-Match, in: header, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json: { schema: { $ref: '#/components/schemas/TaskInput' } }
+      responses:
+        '200':
+          description: Updated (new ETag)
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Task' } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '412': { $ref: '#/components/responses/Precondition' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+    patch:
+      summary: Change some of title, workspaceId, steps
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: If-Match, in: header, schema: { type: string } }
+      responses:
+        '200':
+          description: Updated (new ETag)
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Task' } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '412': { $ref: '#/components/responses/Precondition' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+    delete:
+      summary: Delete a task
+      security: [{ bearer: [] }]
+      responses:
+        '204': { description: Deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /tasks/{id}/start:
+    post:
+      summary: Start a task (pending -> running)
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200':
+          description: Started
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Task' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '500': { $ref: '#/components/responses/Internal' }
+        '503': { $ref: '#/components/responses/Unavailable' }
+  /tasks/{id}/complete:
+    post:
+      summary: Complete a task (running -> completed)
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200':
+          description: Completed
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Task' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /tasks/{id}/cancel:
+    post:
+      summary: Cancel a task (pending or running -> cancelled; repeating is harmless)
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json: { schema: { $ref: '#/components/schemas/Task' } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer }
+  responses:
+    BadRequest:
+      description: 'Problem types malformed-json, bad-request (400) or unsupported-media-type (415)'
+      content:
+        application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } }
+    InvalidQuery:
+      description: 'Problem type invalid-query (400) with errors[]'
+      content:
+        application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } }
+    Unauthorized:
+      description: 'Problem type unauthorized: missing or empty bearer token'
+      headers:
+        WWW-Authenticate: { schema: { type: string } }
+      content:
+        application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } }
+    NotFound:
+      description: 'Problem type task-not-found'
+      content:
+        application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } }
+    NotAcceptable:
+      description: 'Problem type not-acceptable: only application/json and application/xml are available'
+      content:
+        application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } }
+    Conflict:
+      description: 'Problem type illegal-transition (state does not allow this action)'
+      content:
+        application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } }
+    Precondition:
+      description: 'Problem type precondition-failed: If-Match does not match the current ETag'
+      content:
+        application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } }
+    Unprocessable:
+      description: 'Problem types validation-error, empty-steps, agent-unavailable, execution-declined, idempotency-key-reuse (422); field problems are listed in errors[]'
+      content:
+        application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } }
+    TooMany:
+      description: 'Problem type rate-limited. Transient: retry after the Retry-After seconds.'
+      headers:
+        Retry-After: { schema: { type: integer }, description: Seconds to wait }
+      content:
+        application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } }
+    Internal:
+      description: 'Problem type internal-error. No stack trace or database message; only a reference id that matches our server log.'
+      content:
+        application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } }
+    Unavailable:
+      description: 'Problem type service-unavailable (maintenance). Transient: retry after the Retry-After seconds.'
+      headers:
+        Retry-After: { schema: { type: integer }, description: Seconds to wait }
+      content:
+        application/problem+json: { schema: { $ref: '#/components/schemas/Problem' } }
+  schemas:
+    Status: { type: string, enum: [pending, running, completed, cancelled] }
+    Step:
+      type: object
+      required: [agent, attempts]
+      properties:
+        agent: { type: string, example: Code Agent }
+        attempts: { type: integer, minimum: 1 }
+    TaskInput:
+      type: object
+      required: [title, workspaceId, steps]
+      properties:
+        title: { type: string, minLength: 1 }
+        workspaceId: { type: string, minLength: 1 }
+        steps: { type: array, minItems: 1, items: { $ref: '#/components/schemas/Step' } }
+    Task:
+      allOf:
+        - $ref: '#/components/schemas/TaskInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            status: { $ref: '#/components/schemas/Status' }
+            version: { type: integer }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+    TaskPage:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Task' } }
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field: { type: string, example: 'steps[0].attempts' }
+        message: { type: string, example: 'must be an integer >= 1' }
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details
+      required: [type, title, status, detail]
+      properties:
+        type: { type: string, format: uri, example: 'https://api.multiagent.example/problems/validation-error' }
+        title: { type: string, example: Request validation failed }
+        status: { type: integer, example: 422 }
+        detail: { type: string, example: '2 fields failed validation.' }
+        instance: { type: string, example: /tasks }
+        errors: { type: array, items: { $ref: '#/components/schemas/FieldError' }, description: 'Present on validation-error, empty-steps, invalid-query' }
+        reference: { type: string, description: 'Present on internal-error; matches the server log' }
+        retryAfter: { type: integer, description: 'Present on rate-limited and service-unavailable' }
+        currentStatus: { type: string, description: 'Present on illegal-transition' }

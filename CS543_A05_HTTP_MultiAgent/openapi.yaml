@@ -1,0 +1,216 @@
+openapi: 3.0.3
+info:
+  title: Multi-Agent AI Workspace - Tasks service (CS543 A05)
+  version: 1.0.0
+  description: |
+    Tasks are delegated to AI agents. This version reflects Assignment 5: HTTP methods, status codes and headers.
+    Writes need `Authorization: Bearer <token>` (header handling only, no real token system).
+servers:
+  - url: http://localhost:3000
+paths:
+  /tasks:
+    get:
+      summary: List tasks (pure read; filter / sort / paginate in the query string)
+      parameters:
+        - { name: status, in: query, schema: { $ref: '#/components/schemas/Status' } }
+        - { name: agent, in: query, schema: { type: string } }
+        - { name: workspaceId, in: query, schema: { type: string } }
+        - { name: sort, in: query, schema: { type: string, enum: [id, title, createdAt], default: id } }
+        - { name: order, in: query, schema: { type: string, enum: [asc, desc], default: asc } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 10 } }
+      responses:
+        '200':
+          description: A page of tasks (gzip if the client sends Accept-Encoding)
+          headers:
+            Cache-Control: { schema: { type: string }, description: no-cache }
+            X-Total-Count: { schema: { type: integer } }
+            X-RateLimit-Limit: { $ref: '#/components/headers/RateLimit' }
+            X-RateLimit-Remaining: { $ref: '#/components/headers/RateRemaining' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TaskPage' }
+        '400': { $ref: '#/components/responses/Error' }
+        '406': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/TooMany' }
+    post:
+      summary: Create a task (protected; retry-safe with Idempotency-Key)
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: Idempotency-Key, in: header, schema: { type: string }, description: Same key + same body returns the original result (replay marked with Idempotent-Replayed true). }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TaskInput' }
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location: { schema: { type: string }, description: 'URL of the new task, /tasks/{id}' }
+            ETag: { schema: { type: string } }
+            Idempotent-Replayed: { schema: { type: string }, description: 'true when the original result is replayed' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '415': { $ref: '#/components/responses/Error' }
+        '422': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/TooMany' }
+    options:
+      summary: Allowed methods (Allow) and CORS preflight
+      responses:
+        '204':
+          description: No content
+          headers:
+            Allow: { schema: { type: string }, description: 'GET, HEAD, POST, OPTIONS' }
+  /tasks/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: integer } }
+    get:
+      summary: Read one task (Cache-Control + ETag, conditional GET)
+      parameters:
+        - { name: If-None-Match, in: header, schema: { type: string } }
+      responses:
+        '200':
+          description: The task
+          headers:
+            ETag: { schema: { type: string } }
+            Cache-Control: { schema: { type: string }, description: 'private, max-age=30, must-revalidate' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Task' }
+        '304': { description: Not modified (ETag still matches; no body) }
+        '404': { $ref: '#/components/responses/Error' }
+        '406': { $ref: '#/components/responses/Error' }
+    put:
+      summary: Replace title, workspaceId and steps (protected, conditional with If-Match)
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: If-Match, in: header, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TaskInput' }
+      responses:
+        '200': { description: Updated (new ETag), content: { application/json: { schema: { $ref: '#/components/schemas/Task' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/Error' }
+        '412': { description: ETag no longer matches - nothing was overwritten, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { $ref: '#/components/responses/Error' }
+    patch:
+      summary: Change some of title, workspaceId, steps (protected, conditional with If-Match)
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: If-Match, in: header, schema: { type: string } }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Task' } } } }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/Error' }
+        '412': { description: Precondition failed, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { $ref: '#/components/responses/Error' }
+    delete:
+      summary: Delete a task (protected). Clients that cannot send DELETE may POST with X-HTTP-Method-Override DELETE.
+      security: [{ bearer: [] }]
+      responses:
+        '204': { description: Deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { description: Task is running; cancel it first, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    options:
+      summary: Allowed methods
+      responses:
+        '204':
+          description: No content
+          headers:
+            Allow: { schema: { type: string }, description: 'GET, HEAD, PUT, PATCH, DELETE, OPTIONS' }
+  /tasks/{id}/start:
+    post:
+      summary: Start a task (pending -> running)
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Started, content: { application/json: { schema: { $ref: '#/components/schemas/Task' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { description: Illegal transition, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '422': { description: Workspace has no execution quota, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /tasks/{id}/complete:
+    post:
+      summary: Complete a task (running -> completed)
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Completed, content: { application/json: { schema: { $ref: '#/components/schemas/Task' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { description: Illegal transition, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+  /tasks/{id}/cancel:
+    post:
+      summary: Cancel a task (pending or running -> cancelled; repeating it is harmless)
+      security: [{ bearer: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: Cancelled, content: { application/json: { schema: { $ref: '#/components/schemas/Task' } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { description: Task already completed, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer }
+  headers:
+    RateLimit: { schema: { type: integer }, description: Requests allowed per window, per client }
+    RateRemaining: { schema: { type: integer }, description: Requests left in this window }
+  responses:
+    Error:
+      description: Error
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    Unauthorized:
+      description: Missing or empty bearer token
+      headers:
+        WWW-Authenticate: { schema: { type: string } }
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+    TooMany:
+      description: Per-client budget exceeded
+      headers:
+        Retry-After: { schema: { type: integer }, description: Seconds to wait }
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+  schemas:
+    Status: { type: string, enum: [pending, running, completed, cancelled] }
+    Step:
+      type: object
+      required: [agent, attempts]
+      properties:
+        agent: { type: string, example: Code Agent }
+        attempts: { type: integer, minimum: 1 }
+    TaskInput:
+      type: object
+      required: [title, workspaceId, steps]
+      properties:
+        title: { type: string }
+        workspaceId: { type: string }
+        steps: { type: array, minItems: 1, items: { $ref: '#/components/schemas/Step' } }
+    Task:
+      allOf:
+        - $ref: '#/components/schemas/TaskInput'
+        - type: object
+          properties:
+            id: { type: integer }
+            status: { $ref: '#/components/schemas/Status' }
+            version: { type: integer }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+    TaskPage:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Task' } }
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+    Error:
+      type: object
+      properties:
+        error: { type: string }

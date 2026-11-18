@@ -1,0 +1,15 @@
+{
+  "name": "multi-agent-workspace-tasks-http",
+  "version": "1.0.0",
+  "description": "CS543 Assignment 5 - HTTP methods & headers for the Tasks service of the Multi-Agent AI Workspace",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test",
+    "transcript": "bash scripts/make-transcript.sh"
+  },
+  "dependencies": {
+    "compression": "^1.7.5",
+    "express": "^4.21.2"
+  }
+}
